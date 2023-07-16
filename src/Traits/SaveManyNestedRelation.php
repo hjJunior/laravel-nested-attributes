@@ -8,62 +8,64 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 
 final class SaveManyNestedRelation extends PersistableNestedRelation
 {
-  public function __construct(
-    protected $model,
-    protected Relation $relation,
-    protected array $list,
-    protected array $old_data,
-    protected string $relationName
-  ) {
-    throw_unless(
-      $relation instanceof HasMany || $relation instanceof MorphMany,
-      "Only HasMany and MorphMany is supported"
-    );
-  }
-
-  public function save(): bool
-  {
-    foreach ($this->list as $params) {
-      $relationModel = $this->getCurrentRelationModel($params);
-
-      if ($relationModel === null) {
-        $this->createNewRelation($params);
-        continue;
-      }
-
-      if ($this->allowDestroyNestedAttributes($params)) {
-        $relationModel->delete();
-        continue;
-      }
-
-      $relationModel->update($params);
+    public function __construct(
+        protected $model,
+        protected Relation $relation,
+        protected array $list,
+        protected array $old_data,
+        protected string $relationName
+    ) {
+        throw_unless(
+            $relation instanceof HasMany || $relation instanceof MorphMany,
+            'Only HasMany and MorphMany is supported'
+        );
     }
 
-    return true;
-  }
+    public function save(): bool
+    {
+        foreach ($this->list as $params) {
+            $relationModel = $this->getCurrentRelationModel($params);
 
-  private function resetRelationQueryBuilder()
-  {
-    $this->relation = $this->model->{$this->relationName}();
-  }
+            if ($relationModel === null) {
+                $this->createNewRelation($params);
 
-  private function getCurrentRelationModel($params)
-  {
-    $this->resetRelationQueryBuilder();
+                continue;
+            }
 
-    if (!isset($params["id"])) {
-      return null;
+            if ($this->allowDestroyNestedAttributes($params)) {
+                $relationModel->delete();
+
+                continue;
+            }
+
+            $relationModel->update($params);
+        }
+
+        return true;
     }
 
-    return $this->relation->find($params["id"]);
-  }
+    private function resetRelationQueryBuilder()
+    {
+        $this->relation = $this->model->{$this->relationName}();
+    }
 
-  private function createNewRelation($params)
-  {
-    $data = collect($params)
-      ->except($this->model->getKeyName())
-      ->toArray();
+    private function getCurrentRelationModel($params)
+    {
+        $this->resetRelationQueryBuilder();
 
-    return $this->relation->create($data);
-  }
+        if (! isset($params['id'])) {
+            return null;
+        }
+
+        return $this->relation->find($params['id']);
+    }
+
+    private function createNewRelation($params)
+    {
+        $data = collect($params)
+            ->except($this->model->getKeyName())
+            ->toArray();
+
+        return $this->relation->create($data);
+    }
 }
