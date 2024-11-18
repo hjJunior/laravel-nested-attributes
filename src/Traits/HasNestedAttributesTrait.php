@@ -31,6 +31,11 @@ trait HasNestedAttributesTrait
         return $this->acceptNestedAttributesFor;
     }
 
+    public function parentSave(array $options): bool
+    {
+        return parent::save($options);
+    }
+
     public function fill(array $attributes): self
     {
         if (! empty($this->nested)) {
@@ -53,14 +58,10 @@ trait HasNestedAttributesTrait
 
         $this->old_data = $this->getOriginal();
 
-        if (! parent::save($options)) {
-            return false;
-        }
-
         foreach ($this->getAcceptNestedAttributesFor() as $attribute => $stack) {
             $relationName = $this->getRelationNameForAttribute($attribute);
 
-            $this->getPersistable($relationName, $stack)->save();
+            $this->getPersistable($relationName, $stack, $options)->save();
         }
 
         parent::save($options);
@@ -70,7 +71,7 @@ trait HasNestedAttributesTrait
         return true;
     }
 
-    private function getRelationNameForAttribute($attribute)
+    private function getRelationNameForAttribute($attribute): string
     {
         $methodName = (string) str($attribute)->camel();
 
@@ -83,8 +84,9 @@ trait HasNestedAttributesTrait
     }
 
     private function getPersistable(
-        $relationName,
-        $params
+        string $relationName,
+        array $params,
+        array $options
     ): PersistableNestedRelation {
         $relation = $this->{$relationName}();
 
@@ -102,7 +104,8 @@ trait HasNestedAttributesTrait
             $relation,
             $params,
             $this->old_data,
-            $relationName
+            $relationName,
+            $options
         );
     }
 }

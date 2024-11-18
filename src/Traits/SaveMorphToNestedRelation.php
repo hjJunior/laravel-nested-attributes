@@ -2,6 +2,7 @@
 
 namespace Cfx\LaravelNestedAttributes\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Arr;
 
@@ -10,13 +11,13 @@ use Illuminate\Support\Arr;
 final class SaveMorphToNestedRelation extends PersistableNestedRelation
 {
     public function __construct(
-        protected $model,
+        protected Model $model,
         protected MorphTo $relation,
         protected array $params,
         protected array $old_data,
-        protected string $relationName
-    ) {
-    }
+        protected string $relationName,
+        protected array $options
+    ) {}
 
     public function save(): bool
     {
@@ -56,6 +57,8 @@ final class SaveMorphToNestedRelation extends PersistableNestedRelation
 
         $morph = $this->relation->create($data);
         $this->relation->associate($morph);
+
+        $this->model->parentSave($this->options);
 
         return true;
     }
