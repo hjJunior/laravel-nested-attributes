@@ -2,6 +2,7 @@
 
 namespace Cfx\LaravelNestedAttributes\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -9,11 +10,12 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 final class SaveOneNestedRelation extends PersistableNestedRelation
 {
     public function __construct(
-        protected $model,
+        protected Model $model,
         protected Relation $relation,
         protected array $params,
         protected array $old_data,
-        protected string $relationName
+        protected string $relationName,
+        protected array $options,
     ) {
         throw_unless(
             $relation instanceof HasOne || $relation instanceof MorphOne,
@@ -23,6 +25,8 @@ final class SaveOneNestedRelation extends PersistableNestedRelation
 
     public function save(): bool
     {
+        $this->model->parentSave($this->options);
+
         $relationModel = $this->getCurrentRelationModel();
 
         if ($relationModel === null) {

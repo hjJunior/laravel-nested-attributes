@@ -2,6 +2,7 @@
 
 namespace Cfx\LaravelNestedAttributes\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -9,11 +10,12 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 final class SaveManyNestedRelation extends PersistableNestedRelation
 {
     public function __construct(
-        protected $model,
+        protected Model $model,
         protected Relation $relation,
         protected array $list,
         protected array $old_data,
-        protected string $relationName
+        protected string $relationName,
+        protected array $options,
     ) {
         throw_unless(
             $relation instanceof HasMany || $relation instanceof MorphMany,
@@ -23,6 +25,8 @@ final class SaveManyNestedRelation extends PersistableNestedRelation
 
     public function save(): bool
     {
+        $this->model->parentSave($this->options);
+
         foreach ($this->list as $params) {
             $relationModel = $this->getCurrentRelationModel($params);
 

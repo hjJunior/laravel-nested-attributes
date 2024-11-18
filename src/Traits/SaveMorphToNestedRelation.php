@@ -2,21 +2,21 @@
 
 namespace Cfx\LaravelNestedAttributes\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 
-// todo: support "Custom Polymorphic Types"
-// https://laravel.com/docs/9.x/eloquent-relationships#custom-polymorphic-types
 final class SaveMorphToNestedRelation extends PersistableNestedRelation
 {
     public function __construct(
-        protected $model,
+        protected Model $model,
         protected MorphTo $relation,
         protected array $params,
         protected array $old_data,
-        protected string $relationName
-    ) {
-    }
+        protected string $relationName,
+        protected array $options
+    ) {}
 
     public function save(): bool
     {
@@ -38,14 +38,20 @@ final class SaveMorphToNestedRelation extends PersistableNestedRelation
         $foreignKeyName = $this->relation->getForeignKeyName();
         $morphType = $this->relation->getMorphType();
 
-        $old_morph_class = Arr::get($this->old_data, $morphType);
-        $old_morph_id = Arr::get($this->old_data, $foreignKeyName);
+        $old_morphable_type = $this->model->getRawOriginal($morphType);
+        $old_morphable_id = Arr::get($this->old_data, $foreignKeyName);
 
-        if (! $old_morph_class || ! $old_morph_id) {
+        if (! $old_morphable_type || ! $old_morphable_id) {
             return null;
         }
 
-        return $old_morph_class::find($old_morph_id);
+        $morphable_class = Relation::getMorphedModel($old_morphable_type) ?? $old_morphable_type;
+
+        if (class_exists($morphable_class)) {
+            return $old_morphable_type::find($old_morphable_id);
+        }
+
+        throw "$old_morphable_type is not a valid model class";
     }
 
     private function createNewMorphTo()
@@ -56,6 +62,8 @@ final class SaveMorphToNestedRelation extends PersistableNestedRelation
 
         $morph = $this->relation->create($data);
         $this->relation->associate($morph);
+
+        $this->model->parentSave($this->options);
 
         return true;
     }
