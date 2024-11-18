@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 
-// todo: support "Custom Polymorphic Types"
-// https://laravel.com/docs/9.x/eloquent-relationships#custom-polymorphic-types
 final class SaveMorphToNestedRelation extends PersistableNestedRelation
 {
     public function __construct(
